@@ -1,13 +1,17 @@
 ﻿using CleanTeeth.Application.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
+using CleanTeeth.Application.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FluentValidation;
+using FluentValidation.Results;
 
 namespace CleanTeeth.Application.Utilities
 {
-    internal class SimpleMediator : IMediator
+    public class SimpleMediator : IMediator
     {
         private readonly IServiceProvider serviceProvider;
         public SimpleMediator(IServiceProvider serviceProvider)
@@ -16,6 +20,27 @@ namespace CleanTeeth.Application.Utilities
         }
         public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request)
         {
+            var validatorType = typeof(IValidator<>).MakeGenericType(request.GetType());
+
+            var validator = serviceProvider.GetService(validatorType);
+
+            if (validator is not null)
+            {
+                var validateMethod = validatorType.GetMethod("ValidateAsync");
+                var taskToValidate =
+                    (Task)validateMethod!.Invoke(validator, new object[] { request, CancellationToken.None })!;
+
+                await taskToValidate;
+
+                var result = taskToValidate.GetType().GetProperty("Result");
+                var validationResult = (ValidationResult)result!.GetValue(taskToValidate)!;
+
+                if (!validationResult.IsValid)
+                {
+                    throw new CustomValidationException(validationResult);
+                }
+            }
+
             var handlerType = typeof(IRequestHandler<,>)
                 .MakeGenericType(request.GetType(), typeof(TResponse));
 

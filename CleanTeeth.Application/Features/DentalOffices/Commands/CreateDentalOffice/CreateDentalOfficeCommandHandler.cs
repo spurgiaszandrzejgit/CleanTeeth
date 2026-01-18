@@ -16,24 +16,15 @@ namespace CleanTeeth.Application.Features.DentalOffices.Commands.CreateDentalOff
     {
         private readonly IDentalOfficeRepository repository;
         private readonly IUnitOfWork unitOfWork;
-        private readonly IValidator<CreateDentalOfficeCommand> validator;
 
-        public CreateDentalOfficeCommandHandler(IDentalOfficeRepository repository, IUnitOfWork unitOfWork,
-            IValidator<CreateDentalOfficeCommand> validator)
+        public CreateDentalOfficeCommandHandler(IDentalOfficeRepository repository, IUnitOfWork unitOfWork)
         {
             this.repository = repository;
             this.unitOfWork = unitOfWork;
-            this.validator = validator;
         }
 
         public async Task<Guid> Handle(CreateDentalOfficeCommand command)
         {
-            var validationResult = await validator.ValidateAsync(command);
-            if (!validationResult.IsValid) 
-            {
-                throw new CustomValidationException(validationResult);
-            }
-
             var dentalOffice = new DentalOffice(command.Name);
             try
             {
