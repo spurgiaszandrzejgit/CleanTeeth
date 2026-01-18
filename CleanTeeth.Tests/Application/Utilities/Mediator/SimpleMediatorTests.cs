@@ -59,7 +59,6 @@ namespace CleanTeeth.Tests.Application.Utilities.Mediator
                 .ReturnsNull();
 
             var mediator = new SimpleMediator(serviceProvider);
-
             var result = await mediator.Send(request);
         }
 
